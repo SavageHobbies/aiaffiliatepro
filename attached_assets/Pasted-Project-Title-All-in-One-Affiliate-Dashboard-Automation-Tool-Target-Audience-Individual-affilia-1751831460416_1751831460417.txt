@@ -1,0 +1,177 @@
+Project Title: All-in-One Affiliate Dashboard & Automation Tool
+
+Target Audience: Individual affiliate marketers, small to medium-sized businesses managing multiple affiliate programs.
+
+Core Problem to Solve: Affiliate marketers often struggle with:
+
+Forgetting program details: Which programs they've signed up for, where the dashboards are, login credentials, payment terms, etc.
+
+Tracking application/approval status: Losing track of programs they've applied to and are awaiting approval.
+
+Fragmented data: Having to log into multiple dashboards to get a full picture of their performance.
+
+Manual data aggregation: The tedious process of manually combining sales data from various sources.
+
+Optimizing performance: Lacking a centralized view to identify top-performing programs, links, and content.
+
+Proposed Solution (Choose one or discuss hybrid approach):
+
+Option 1: Web Application (SaaS Model)
+
+Pros: Accessible from any device, easier to update and maintain, potential for more complex backend logic, better for larger datasets and integrations.
+
+Cons: Requires users to visit a separate website, might be slightly less "in-the-moment" than a browser extension for capturing URLs.
+
+Option 2: Hybrid Web App + Chrome Extension
+
+Pros: Combines the best of both worlds – the Chrome extension for quick URL capture and contextual actions, and the web app for centralized data, reporting, and management.
+
+Cons: More complex to develop and maintain due to two separate, interconnected components.
+
+Key Features & User Stories:
+
+I. Centralized Program Management:
+
+User Story: As an affiliate marketer, I want a single place to store and organize all my affiliate program information so I don't forget details or lose track of them.
+
+Features:
+
+Program Directory: A searchable and sortable list of all affiliate programs the user is involved with.
+
+Program Details Page: For each program, allow storage of:
+
+Program Name & Logo
+
+Affiliate Network (e.g., ShareASale, CJ Affiliate, direct merchant)
+
+Dashboard URL
+
+Login Credentials (securely stored/managed, potentially with integration to password managers)
+
+Contact Person/Support Email
+
+Commission Structure (e.g., % of sale, flat fee, recurring)
+
+Cookie Duration
+
+Payment Threshold & Payment Method
+
+Custom Notes/Reminders
+
+Date Joined/Applied
+
+Status (Active, Pending Approval, Rejected, Inactive)
+
+Application Tracking: A dedicated section to track programs applied to, including application date, estimated approval time, and status updates.
+
+Tags/Categories: Ability to categorize programs (e.g., Niche, Product Type, High-Paying) for easier filtering.
+
+II. Smart Link & URL Management:
+
+User Story: As an affiliate marketer, I want to easily capture and store affiliate links, and optionally, cloak/brand them, without manual copy-pasting.
+
+Features (especially relevant for Chrome Extension):
+
+One-Click URL Capture: When on an affiliate program's dashboard or a product page, the Chrome extension should intelligently detect potential affiliate links or allow easy capture of the current URL.
+
+Consideration: How will it "detect" an affiliate link? This might involve pre-configured rules for known networks or user input.
+
+Link Storage & Association: Store captured URLs and associate them with the correct affiliate program.
+
+Custom Link Naming: Allow users to give descriptive names to their links (e.g., "Product X Review Link," "Homepage Promo").
+
+Link Cloaking/Branding (Optional but highly desirable): Ability to create branded, short URLs (e.g., yourdomain.com/go/product-x) for better aesthetics and trust. This would require domain integration.
+
+Click Tracking (Basic): At a minimum, track clicks on the links generated or stored within the application.
+
+III. Consolidated Performance & Sales Data:
+
+User Story: As an affiliate marketer, I want to see my sales and performance data from all my affiliate programs in one unified dashboard, without logging into each one individually.
+
+Features:
+
+Data Aggregation (Most Challenging, but High Value):
+
+API Integrations: The ideal solution. Connect to affiliate networks (e.g., ShareASale, CJ Affiliate, Amazon Associates, Impact, Rakuten, etc.) via their APIs to pull real-time or near real-time sales, clicks, and commission data. This requires researching and implementing each network's API.
+
+Web Scraping (Alternative/Fallback): For networks without robust APIs, intelligent web scraping of dashboard data. This is more fragile and maintenance-intensive but might be necessary for some programs.
+
+Manual Data Import (CSV/Excel): Allow users to upload CSVs of their sales reports from networks that don't offer APIs or are difficult to scrape.
+
+Unified Dashboard:
+
+Total Earnings across all programs (daily, weekly, monthly, custom range).
+
+Total Clicks, Conversions, Conversion Rate.
+
+Top Performing Programs, Products, and Links.
+
+Graphical representation of trends over time.
+
+Ability to filter data by program, date range, tags, etc.
+
+Commission Tracking & Payouts: Track commissions earned and commissions paid by each network. Potentially allow users to mark payouts as received.
+
+IV. Reporting & Analytics:
+
+User Story: As an affiliate marketer, I want to easily generate reports to understand what's working and identify areas for improvement.
+
+Features:
+
+Customizable Reports: Generate reports based on various metrics (earnings, clicks, conversions) and dimensions (program, product, date).
+
+Export Options: Export data to CSV, Excel, or PDF.
+
+Performance Benchmarking: Optionally, allow users to compare their current performance against historical data.
+
+V. Notifications & Reminders:
+
+User Story: As an affiliate marketer, I want to be reminded about important program updates, payment thresholds, or application statuses.
+
+Features:
+
+Custom Reminders: Set reminders for specific programs (e.g., "Check X program dashboard on the 1st of the month").
+
+Automated Alerts: (If data aggregation is implemented) Notify users when a payment threshold is met, a commission is recorded, or an application status changes.
+
+Technical Considerations for the Full-Stack Builder:
+
+Frontend Framework: React, Vue, Angular (for web app)
+
+Backend Language/Framework: Node.js (Express), Python (Django/Flask), Ruby on Rails, PHP (Laravel) – Choose based on developer expertise.
+
+Database: PostgreSQL, MySQL (for relational data), MongoDB (if more flexible document storage is preferred).
+
+Authentication: Secure user authentication (OAuth, JWT, session-based).
+
+Data Security: Emphasize secure storage of sensitive data (login credentials, API keys) using encryption and best practices.
+
+Scalability: Design for potential growth in users and data.
+
+API Integrations: This is the most complex part. Researching and implementing APIs for popular affiliate networks will be crucial. This might involve rate limiting, error handling, and robust data mapping.
+
+Chrome Extension (if applicable):
+
+JavaScript, HTML, CSS.
+
+Messaging between background script and content script for data capture.
+
+Secure communication with the web application's API.
+
+UI/UX: Focus on a clean, intuitive, and visually appealing interface. Dashboards should be easy to read and navigate.
+
+Hosting: AWS, Google Cloud, Azure, Heroku, Vercel, Netlify.
+
+Monetization Strategy (Discuss with developer):
+
+Subscription tiers based on number of affiliate programs, number of tracked links, data aggregation frequency, or advanced features.
+
+Freemium model with limited features.
+
+Minimum Viable Product (MVP) Considerations:
+
+Start with manual program entry and basic link tracking.
+
+Focus on integrating with 1-2 key affiliate networks for data aggregation first.
+
+Prioritize the most impactful features for your initial launch.
