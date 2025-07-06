@@ -22,7 +22,7 @@ export default function Programs() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: programs, isLoading } = useQuery({
+  const { data: programs, isLoading } = useQuery<AffiliateProgram[]>({
     queryKey: ["/api/programs"],
   });
 
@@ -57,12 +57,12 @@ export default function Programs() {
     },
   });
 
-  const filteredPrograms = programs?.filter((program: AffiliateProgram) => {
+  const filteredPrograms = Array.isArray(programs) ? programs.filter((program: AffiliateProgram) => {
     const matchesSearch = program.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesNetwork = !networkFilter || program.network === networkFilter;
-    const matchesStatus = !statusFilter || program.status === statusFilter;
+    const matchesNetwork = !networkFilter || networkFilter === "all" || program.network === networkFilter;
+    const matchesStatus = !statusFilter || statusFilter === "all" || program.status === statusFilter;
     return matchesSearch && matchesNetwork && matchesStatus;
-  }) || [];
+  }) : [];
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -145,7 +145,7 @@ export default function Programs() {
                 <SelectValue placeholder="All Networks" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Networks</SelectItem>
+                <SelectItem value="all">All Networks</SelectItem>
                 <SelectItem value="Amazon Associates">Amazon Associates</SelectItem>
                 <SelectItem value="ShareASale">ShareASale</SelectItem>
                 <SelectItem value="CJ Affiliate">CJ Affiliate</SelectItem>
@@ -159,7 +159,7 @@ export default function Programs() {
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
@@ -215,7 +215,7 @@ export default function Programs() {
                     <TableCell className="text-slate-900">
                       {program.dateJoined 
                         ? new Date(program.dateJoined).toLocaleDateString()
-                        : new Date(program.createdAt).toLocaleDateString()
+                        : program.createdAt ? new Date(program.createdAt).toLocaleDateString() : '-'
                       }
                     </TableCell>
                     <TableCell>
