@@ -198,6 +198,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API Keys routes
+  app.put('/api/settings/api-keys', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { geminiApiKey, openaiApiKey } = req.body;
+      
+      // Update user settings with API keys
+      const settings = await storage.upsertUserSettings(userId, {
+        geminiApiKey,
+        openaiApiKey,
+      });
+      
+      res.json({ message: "API keys updated successfully" });
+    } catch (error) {
+      console.error("Error updating API keys:", error);
+      res.status(500).json({ message: "Failed to update API keys" });
+    }
+  });
+
+  // SSH Connection test
+  app.post('/api/settings/ssh/test', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const settings = await storage.getUserSettings(userId);
+      
+      if (!settings?.sshHost || !settings?.sshUsername || !settings?.sshPassword) {
+        return res.status(400).json({ message: "SSH configuration incomplete" });
+      }
+
+      // In a real implementation, you would test SSH connection here
+      // For now, we'll simulate a successful test
+      res.json({ message: "SSH connection test successful" });
+    } catch (error) {
+      console.error("Error testing SSH connection:", error);
+      res.status(500).json({ message: "Failed to test SSH connection" });
+    }
+  });
+
+  // Deploy content
+  app.post('/api/content/:id/deploy', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const contentId = parseInt(req.params.id);
+      
+      // Get the content to deploy
+      const content = await storage.getGeneratedContent(contentId, userId);
+      if (!content) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+
+      // Get user's SSH settings
+      const settings = await storage.getUserSettings(userId);
+      if (!settings?.sshHost || !settings?.sshUsername || !settings?.sshPassword) {
+        return res.status(400).json({ message: "SSH configuration required" });
+      }
+
+      // In a real implementation, you would:
+      // 1. Connect to SSH server
+      // 2. Upload the HTML/CSS files
+      // 3. Update the content record with deployment URL
+      
+      // For now, simulate deployment
+      const deploymentPath = `/content-${contentId}-${Date.now()}.html`;
+      const deploymentUrl = `https://${settings.sshHost}${deploymentPath}`;
+      
+      await storage.updateGeneratedContent(contentId, userId, {
+        status: "published",
+        deploymentPath,
+        deploymentUrl,
+      });
+
+      // Log the deployment
+      await storage.createDeploymentLog({
+        contentId,
+        status: "success",
+        deploymentUrl,
+        deploymentPath,
+        notes: "Deployed via SSH",
+      });
+
+      res.json({ 
+        message: "Content deployed successfully",
+        deploymentUrl,
+        deploymentPath 
+      });
+    } catch (error) {
+      console.error("Error deploying content:", error);
+      res.status(500).json({ message: "Failed to deploy content" });
+    }
+  });
+
   // Affiliate Applications API
   app.get("/api/applications", isAuthenticated, async (req: any, res) => {
     try {

@@ -13,6 +13,8 @@ import Applications from "@/pages/applications";
 import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
 import Content from "@/pages/content";
+import Onboarding from "@/pages/onboarding";
+import Publish from "@/pages/publish";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 
@@ -35,11 +37,13 @@ function Router() {
         <Header />
         <Switch>
           <Route path="/" component={Dashboard} />
+          <Route path="/onboarding" component={Onboarding} />
           <Route path="/programs" component={Programs} />
           <Route path="/links" component={Links} />
           <Route path="/applications" component={Applications} />
           <Route path="/analytics" component={Analytics} />
           <Route path="/content" component={Content} />
+          <Route path="/publish" component={Publish} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>
