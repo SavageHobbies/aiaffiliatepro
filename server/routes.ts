@@ -275,6 +275,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Commission payment routes
+  app.get('/api/payments', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const payments = await storage.getUserCommissionPayments(userId);
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+      res.status(500).json({ message: "Failed to fetch payments" });
+    }
+  });
+
+  app.post('/api/payments', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const payment = await storage.createCommissionPayment(userId, req.body);
+      res.json(payment);
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      res.status(500).json({ message: "Failed to create payment" });
+    }
+  });
+
+  app.put('/api/payments/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      const payment = await storage.updateCommissionPayment(id, userId, req.body);
+      res.json(payment);
+    } catch (error) {
+      console.error("Error updating payment:", error);
+      res.status(500).json({ message: "Failed to update payment" });
+    }
+  });
+
+  app.delete('/api/payments/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      await storage.deleteCommissionPayment(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+      res.status(500).json({ message: "Failed to delete payment" });
+    }
+  });
+
+  // Link monitoring routes
+  app.get('/api/links/:linkId/monitoring', isAuthenticated, async (req: any, res) => {
+    try {
+      const linkId = parseInt(req.params.linkId);
+      const monitoring = await storage.getLinkMonitoring(linkId);
+      res.json(monitoring);
+    } catch (error) {
+      console.error("Error fetching link monitoring:", error);
+      res.status(500).json({ message: "Failed to fetch link monitoring" });
+    }
+  });
+
+  app.post('/api/links/:linkId/check-health', isAuthenticated, async (req: any, res) => {
+    try {
+      const linkId = parseInt(req.params.linkId);
+      const monitoring = await storage.checkLinkHealth(linkId);
+      res.json(monitoring);
+    } catch (error) {
+      console.error("Error checking link health:", error);
+      res.status(500).json({ message: "Failed to check link health" });
+    }
+  });
+
+  // Content performance routes
+  app.get('/api/content', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const content = await storage.getUserContentPerformance(userId);
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching content performance:", error);
+      res.status(500).json({ message: "Failed to fetch content performance" });
+    }
+  });
+
+  app.post('/api/content', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const content = await storage.createContentPerformance(userId, req.body);
+      res.json(content);
+    } catch (error) {
+      console.error("Error creating content performance:", error);
+      res.status(500).json({ message: "Failed to create content performance" });
+    }
+  });
+
+  app.put('/api/content/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      const content = await storage.updateContentPerformance(id, userId, req.body);
+      res.json(content);
+    } catch (error) {
+      console.error("Error updating content performance:", error);
+      res.status(500).json({ message: "Failed to update content performance" });
+    }
+  });
+
+  app.delete('/api/content/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      await storage.deleteContentPerformance(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting content performance:", error);
+      res.status(500).json({ message: "Failed to delete content performance" });
+    }
+  });
+
+  // Competitor tracking routes
+  app.get('/api/competitors', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const competitors = await storage.getUserCompetitorTracking(userId);
+      res.json(competitors);
+    } catch (error) {
+      console.error("Error fetching competitors:", error);
+      res.status(500).json({ message: "Failed to fetch competitors" });
+    }
+  });
+
+  app.post('/api/competitors', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const competitor = await storage.createCompetitorTracking(userId, req.body);
+      res.json(competitor);
+    } catch (error) {
+      console.error("Error creating competitor:", error);
+      res.status(500).json({ message: "Failed to create competitor" });
+    }
+  });
+
+  app.put('/api/competitors/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      const competitor = await storage.updateCompetitorTracking(id, userId, req.body);
+      res.json(competitor);
+    } catch (error) {
+      console.error("Error updating competitor:", error);
+      res.status(500).json({ message: "Failed to update competitor" });
+    }
+  });
+
+  app.delete('/api/competitors/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      await storage.deleteCompetitorTracking(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting competitor:", error);
+      res.status(500).json({ message: "Failed to delete competitor" });
+    }
+  });
+
+  // Advanced analytics route
+  app.get('/api/analytics/advanced', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const stats = await storage.getAdvancedUserStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching advanced analytics:", error);
+      res.status(500).json({ message: "Failed to fetch advanced analytics" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

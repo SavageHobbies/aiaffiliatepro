@@ -108,6 +108,105 @@ export const affiliateApplications = pgTable("affiliate_applications", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Commission payments tracking table
+export const commissionPayments = pgTable("commission_payments", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  programId: integer("program_id").references(() => affiliatePrograms.id, { onDelete: "cascade" }),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency").default("USD"),
+  paymentDate: timestamp("payment_date"),
+  expectedPaymentDate: timestamp("expected_payment_date"),
+  status: varchar("status").default("pending"), // pending, processing, paid, failed
+  paymentMethod: varchar("payment_method"), // paypal, bank_transfer, check, etc.
+  transactionId: varchar("transaction_id"),
+  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default("0.00"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Link monitoring table for tracking link health
+export const linkMonitoring = pgTable("link_monitoring", {
+  id: serial("id").primaryKey(),
+  linkId: integer("link_id").notNull().references(() => affiliateLinks.id, { onDelete: "cascade" }),
+  lastChecked: timestamp("last_checked").defaultNow(),
+  status: varchar("status").default("active"), // active, broken, redirect_changed, expired
+  responseTime: integer("response_time"), // in milliseconds
+  httpStatus: integer("http_status"),
+  finalUrl: text("final_url"), // after redirects
+  errorMessage: text("error_message"),
+  checksToday: integer("checks_today").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Fraud detection table
+export const fraudDetection = pgTable("fraud_detection", {
+  id: serial("id").primaryKey(),
+  linkId: integer("link_id").references(() => affiliateLinks.id, { onDelete: "cascade" }),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  clickTime: timestamp("click_time").defaultNow(),
+  suspicious: boolean("suspicious").default(false),
+  fraudType: varchar("fraud_type"), // click_fraud, bot_traffic, cookie_stuffing, duplicate_click
+  riskScore: integer("risk_score").default(0), // 0-100
+  geoLocation: varchar("geo_location"),
+  sessionId: varchar("session_id"),
+  referrer: text("referrer"),
+  deviceFingerprint: text("device_fingerprint"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Content performance tracking
+export const contentPerformance = pgTable("content_performance", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  contentUrl: text("content_url").notNull(),
+  contentTitle: varchar("content_title"),
+  contentType: varchar("content_type"), // blog_post, video, social_media, email
+  publishDate: timestamp("publish_date"),
+  totalClicks: integer("total_clicks").default(0),
+  totalConversions: integer("total_conversions").default(0),
+  totalEarnings: decimal("total_earnings", { precision: 10, scale: 2 }).default("0.00"),
+  conversionRate: decimal("conversion_rate", { precision: 5, scale: 2 }).default("0.00"),
+  avgOrderValue: decimal("avg_order_value", { precision: 10, scale: 2 }).default("0.00"),
+  seoRanking: integer("seo_ranking"),
+  socialShares: integer("social_shares").default(0),
+  emailOpens: integer("email_opens").default(0),
+  emailClicks: integer("email_clicks").default(0),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Competitor tracking table
+export const competitorTracking = pgTable("competitor_tracking", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  competitorName: varchar("competitor_name").notNull(),
+  competitorUrl: text("competitor_url"),
+  niche: varchar("niche"),
+  estimatedTraffic: integer("estimated_traffic"),
+  topProducts: text("top_products"), // JSON array of product names
+  promotionStrategy: text("promotion_strategy"),
+  lastAnalyzed: timestamp("last_analyzed").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Tax compliance tracking
+export const taxCompliance = pgTable("tax_compliance", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  taxYear: integer("tax_year").notNull(),
+  country: varchar("country").notNull(),
+  totalIncome: decimal("total_income", { precision: 12, scale: 2 }).default("0.00"),
+  totalExpenses: decimal("total_expenses", { precision: 12, scale: 2 }).default("0.00"),
+  taxOwed: decimal("tax_owed", { precision: 12, scale: 2 }).default("0.00"),
+  filingStatus: varchar("filing_status"), // filed, pending, overdue
+  filingDate: timestamp("filing_date"),
+  documents: text("documents"), // JSON array of document URLs
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // User settings table
 export const userSettings = pgTable("user_settings", {
   id: serial("id").primaryKey(),
@@ -180,6 +279,31 @@ export const userSettingsRelations = relations(userSettings, ({ one }) => ({
   }),
 }));
 
+export const commissionPaymentsRelations = relations(commissionPayments, ({ one }) => ({
+  user: one(users, { fields: [commissionPayments.userId], references: [users.id] }),
+  program: one(affiliatePrograms, { fields: [commissionPayments.programId], references: [affiliatePrograms.id] }),
+}));
+
+export const linkMonitoringRelations = relations(linkMonitoring, ({ one }) => ({
+  link: one(affiliateLinks, { fields: [linkMonitoring.linkId], references: [affiliateLinks.id] }),
+}));
+
+export const fraudDetectionRelations = relations(fraudDetection, ({ one }) => ({
+  link: one(affiliateLinks, { fields: [fraudDetection.linkId], references: [affiliateLinks.id] }),
+}));
+
+export const contentPerformanceRelations = relations(contentPerformance, ({ one }) => ({
+  user: one(users, { fields: [contentPerformance.userId], references: [users.id] }),
+}));
+
+export const competitorTrackingRelations = relations(competitorTracking, ({ one }) => ({
+  user: one(users, { fields: [competitorTracking.userId], references: [users.id] }),
+}));
+
+export const taxComplianceRelations = relations(taxCompliance, ({ one }) => ({
+  user: one(users, { fields: [taxCompliance.userId], references: [users.id] }),
+}));
+
 // Schema types for forms and API
 export const insertAffiliateProgramSchema = createInsertSchema(affiliatePrograms).omit({
   id: true,
@@ -217,6 +341,40 @@ export const insertUserSettingsSchema = createInsertSchema(userSettings).omit({
   updatedAt: true,
 });
 
+export const insertCommissionPaymentSchema = createInsertSchema(commissionPayments).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+});
+
+export const insertLinkMonitoringSchema = createInsertSchema(linkMonitoring).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertFraudDetectionSchema = createInsertSchema(fraudDetection).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContentPerformanceSchema = createInsertSchema(contentPerformance).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+});
+
+export const insertCompetitorTrackingSchema = createInsertSchema(competitorTracking).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+});
+
+export const insertTaxComplianceSchema = createInsertSchema(taxCompliance).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertAffiliateProgram = z.infer<typeof insertAffiliateProgramSchema>;
@@ -229,3 +387,15 @@ export type InsertPerformanceData = z.infer<typeof insertPerformanceDataSchema>;
 export type PerformanceData = typeof performanceData.$inferSelect;
 export type InsertUserSettings = z.infer<typeof insertUserSettingsSchema>;
 export type UserSettings = typeof userSettings.$inferSelect;
+export type InsertCommissionPayment = z.infer<typeof insertCommissionPaymentSchema>;
+export type CommissionPayment = typeof commissionPayments.$inferSelect;
+export type InsertLinkMonitoring = z.infer<typeof insertLinkMonitoringSchema>;
+export type LinkMonitoring = typeof linkMonitoring.$inferSelect;
+export type InsertFraudDetection = z.infer<typeof insertFraudDetectionSchema>;
+export type FraudDetection = typeof fraudDetection.$inferSelect;
+export type InsertContentPerformance = z.infer<typeof insertContentPerformanceSchema>;
+export type ContentPerformance = typeof contentPerformance.$inferSelect;
+export type InsertCompetitorTracking = z.infer<typeof insertCompetitorTrackingSchema>;
+export type CompetitorTracking = typeof competitorTracking.$inferSelect;
+export type InsertTaxCompliance = z.infer<typeof insertTaxComplianceSchema>;
+export type TaxCompliance = typeof taxCompliance.$inferSelect;
