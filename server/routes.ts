@@ -7,6 +7,8 @@ import {
   insertAffiliateLinkSchema,
   insertAffiliateApplicationSchema,
   insertUserSettingsSchema,
+  insertGeneratedContentSchema,
+  insertDeploymentLogSchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -448,6 +450,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching advanced analytics:", error);
       res.status(500).json({ message: "Failed to fetch advanced analytics" });
+    }
+  });
+
+  // Content generation routes
+  app.get('/api/generated-content', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const content = await storage.getUserGeneratedContent(userId);
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching generated content:", error);
+      res.status(500).json({ message: "Failed to fetch generated content" });
+    }
+  });
+
+  app.post('/api/generated-content', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertGeneratedContentSchema.parse(req.body);
+      const content = await storage.createGeneratedContent(userId, validatedData);
+      res.status(201).json(content);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        console.error("Error creating generated content:", error);
+        res.status(500).json({ message: "Failed to create generated content" });
+      }
+    }
+  });
+
+  app.put('/api/generated-content/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      const validatedData = insertGeneratedContentSchema.partial().parse(req.body);
+      const content = await storage.updateGeneratedContent(id, userId, validatedData);
+      res.json(content);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        console.error("Error updating generated content:", error);
+        res.status(500).json({ message: "Failed to update generated content" });
+      }
+    }
+  });
+
+  app.delete('/api/generated-content/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      await storage.deleteGeneratedContent(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting generated content:", error);
+      res.status(500).json({ message: "Failed to delete generated content" });
+    }
+  });
+
+  app.get('/api/generated-content/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      const content = await storage.getGeneratedContent(id, userId);
+      if (!content) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching generated content:", error);
+      res.status(500).json({ message: "Failed to fetch generated content" });
+    }
+  });
+
+  // SSH deployment routes
+  app.post('/api/deployments', isAuthenticated, async (req: any, res) => {
+    try {
+      const validatedData = insertDeploymentLogSchema.parse(req.body);
+      const deployment = await storage.createDeploymentLog(validatedData);
+      res.status(201).json(deployment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        console.error("Error creating deployment log:", error);
+        res.status(500).json({ message: "Failed to create deployment log" });
+      }
+    }
+  });
+
+  app.get('/api/generated-content/:contentId/deployments', isAuthenticated, async (req: any, res) => {
+    try {
+      const contentId = parseInt(req.params.contentId);
+      const deployments = await storage.getDeploymentLogs(contentId);
+      res.json(deployments);
+    } catch (error) {
+      console.error("Error fetching deployment logs:", error);
+      res.status(500).json({ message: "Failed to fetch deployment logs" });
+    }
+  });
+
+  // AI Content Generation endpoint
+  app.post("/api/generate-content", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const { aiApiKey, prompt, contentType, keywords, selectedPrograms, title } = req.body;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      if (!aiApiKey || !prompt) {
+        return res.status(400).json({ message: "AI API key and prompt are required" });
+      }
+
+      // Import the Gemini utility
+      const { generateAffiliateContent } = await import("./ai/gemini");
+      
+      // Generate content using AI
+      const generatedContent = await generateAffiliateContent(
+        aiApiKey,
+        prompt,
+        contentType || "blog post",
+        keywords ? keywords.split(",").map((k: string) => k.trim()) : [],
+        selectedPrograms || []
+      );
+
+      res.json({ 
+        content: generatedContent,
+        message: "Content generated successfully" 
+      });
+    } catch (error) {
+      console.error("Error generating content:", error);
+      res.status(500).json({ message: "Failed to generate content", error: error.message });
     }
   });
 

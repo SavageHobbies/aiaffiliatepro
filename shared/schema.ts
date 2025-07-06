@@ -216,8 +216,54 @@ export const userSettings = pgTable("user_settings", {
   weeklyReports: boolean("weekly_reports").default(false),
   currency: varchar("currency").default("USD"),
   timezone: varchar("timezone").default("UTC"),
+  // SSH hosting configuration
+  sshHost: varchar("ssh_host"),
+  sshUsername: varchar("ssh_username"),
+  sshPassword: text("ssh_password"), // encrypted
+  sshPort: integer("ssh_port").default(22),
+  webRootPath: varchar("web_root_path").default("/public_html"),
+  // AI API configuration
+  openaiApiKey: text("openai_api_key"), // encrypted
+  geminiApiKey: text("gemini_api_key"), // encrypted
+  preferredAiProvider: varchar("preferred_ai_provider").default("openai"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Content generation and deployment tracking
+export const generatedContent = pgTable("generated_content", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title").notNull(),
+  contentType: varchar("content_type").notNull(), // 'comparison', 'review', 'landing_page'
+  selectedPrograms: jsonb("selected_programs").notNull(), // array of program IDs
+  aiPrompt: text("ai_prompt").notNull(),
+  generatedHtml: text("generated_html").notNull(),
+  generatedCss: text("generated_css"),
+  status: varchar("status").default("draft"), // draft, published, archived
+  deploymentPath: varchar("deployment_path"), // path on SSH server
+  deploymentUrl: varchar("deployment_url"), // live URL
+  seoKeywords: jsonb("seo_keywords"), // array of keywords
+  metaDescription: text("meta_description"),
+  totalViews: integer("total_views").default(0),
+  totalClicks: integer("total_clicks").default(0),
+  totalConversions: integer("total_conversions").default(0),
+  revenue: decimal("revenue", { precision: 10, scale: 2 }).default("0.00"),
+  lastDeployedAt: timestamp("last_deployed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// SSH deployment logs
+export const deploymentLogs = pgTable("deployment_logs", {
+  id: serial("id").primaryKey(),
+  contentId: integer("content_id").notNull().references(() => generatedContent.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: varchar("status").notNull(), // success, failed, in_progress
+  deploymentPath: varchar("deployment_path").notNull(),
+  logMessage: text("log_message"),
+  errorDetails: text("error_details"),
+  deployedAt: timestamp("deployed_at").defaultNow(),
 });
 
 // Relations
@@ -304,6 +350,16 @@ export const taxComplianceRelations = relations(taxCompliance, ({ one }) => ({
   user: one(users, { fields: [taxCompliance.userId], references: [users.id] }),
 }));
 
+export const generatedContentRelations = relations(generatedContent, ({ one, many }) => ({
+  user: one(users, { fields: [generatedContent.userId], references: [users.id] }),
+  deploymentLogs: many(deploymentLogs),
+}));
+
+export const deploymentLogsRelations = relations(deploymentLogs, ({ one }) => ({
+  content: one(generatedContent, { fields: [deploymentLogs.contentId], references: [generatedContent.id] }),
+  user: one(users, { fields: [deploymentLogs.userId], references: [users.id] }),
+}));
+
 // Schema types for forms and API
 export const insertAffiliateProgramSchema = createInsertSchema(affiliatePrograms).omit({
   id: true,
@@ -375,6 +431,23 @@ export const insertTaxComplianceSchema = createInsertSchema(taxCompliance).omit(
   createdAt: true,
 });
 
+export const insertGeneratedContentSchema = createInsertSchema(generatedContent).omit({
+  id: true,
+  userId: true,
+  totalViews: true,
+  totalClicks: true,
+  totalConversions: true,
+  revenue: true,
+  lastDeployedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDeploymentLogSchema = createInsertSchema(deploymentLogs).omit({
+  id: true,
+  deployedAt: true,
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertAffiliateProgram = z.infer<typeof insertAffiliateProgramSchema>;
@@ -399,3 +472,7 @@ export type InsertCompetitorTracking = z.infer<typeof insertCompetitorTrackingSc
 export type CompetitorTracking = typeof competitorTracking.$inferSelect;
 export type InsertTaxCompliance = z.infer<typeof insertTaxComplianceSchema>;
 export type TaxCompliance = typeof taxCompliance.$inferSelect;
+export type InsertGeneratedContent = z.infer<typeof insertGeneratedContentSchema>;
+export type GeneratedContent = typeof generatedContent.$inferSelect;
+export type InsertDeploymentLog = z.infer<typeof insertDeploymentLogSchema>;
+export type DeploymentLog = typeof deploymentLogs.$inferSelect;

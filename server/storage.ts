@@ -11,6 +11,8 @@ import {
   contentPerformance,
   competitorTracking,
   taxCompliance,
+  generatedContent,
+  deploymentLogs,
   type User,
   type UpsertUser,
   type AffiliateProgram,
@@ -35,6 +37,10 @@ import {
   type InsertCompetitorTracking,
   type TaxCompliance,
   type InsertTaxCompliance,
+  type GeneratedContent,
+  type InsertGeneratedContent,
+  type DeploymentLog,
+  type InsertDeploymentLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sum, count, sql } from "drizzle-orm";
@@ -116,6 +122,17 @@ export interface IStorage {
   createTaxCompliance(userId: string, tax: InsertTaxCompliance): Promise<TaxCompliance>;
   updateTaxCompliance(id: number, userId: string, tax: Partial<InsertTaxCompliance>): Promise<TaxCompliance>;
   deleteTaxCompliance(id: number, userId: string): Promise<void>;
+  
+  // Content generation operations
+  getUserGeneratedContent(userId: string): Promise<GeneratedContent[]>;
+  createGeneratedContent(userId: string, content: InsertGeneratedContent): Promise<GeneratedContent>;
+  updateGeneratedContent(id: number, userId: string, content: Partial<InsertGeneratedContent>): Promise<GeneratedContent>;
+  deleteGeneratedContent(id: number, userId: string): Promise<void>;
+  getGeneratedContent(id: number, userId: string): Promise<GeneratedContent | undefined>;
+  
+  // SSH deployment operations
+  createDeploymentLog(log: InsertDeploymentLog): Promise<DeploymentLog>;
+  getDeploymentLogs(contentId: number): Promise<DeploymentLog[]>;
   
   // Advanced analytics operations
   getAdvancedUserStats(userId: string): Promise<{
@@ -700,6 +717,63 @@ export class DatabaseStorage implements IStorage {
       competitorInsights,
       taxComplianceStatus: taxStatus,
     };
+  }
+
+  // Content generation operations
+  async getUserGeneratedContent(userId: string): Promise<GeneratedContent[]> {
+    return await db
+      .select()
+      .from(generatedContent)
+      .where(eq(generatedContent.userId, userId))
+      .orderBy(desc(generatedContent.createdAt));
+  }
+
+  async createGeneratedContent(userId: string, content: InsertGeneratedContent): Promise<GeneratedContent> {
+    const [newContent] = await db
+      .insert(generatedContent)
+      .values({ ...content, userId })
+      .returning();
+    return newContent;
+  }
+
+  async updateGeneratedContent(id: number, userId: string, content: Partial<InsertGeneratedContent>): Promise<GeneratedContent> {
+    const [updatedContent] = await db
+      .update(generatedContent)
+      .set({ ...content, updatedAt: new Date() })
+      .where(and(eq(generatedContent.id, id), eq(generatedContent.userId, userId)))
+      .returning();
+    return updatedContent;
+  }
+
+  async deleteGeneratedContent(id: number, userId: string): Promise<void> {
+    await db
+      .delete(generatedContent)
+      .where(and(eq(generatedContent.id, id), eq(generatedContent.userId, userId)));
+  }
+
+  async getGeneratedContent(id: number, userId: string): Promise<GeneratedContent | undefined> {
+    const [content] = await db
+      .select()
+      .from(generatedContent)
+      .where(and(eq(generatedContent.id, id), eq(generatedContent.userId, userId)));
+    return content;
+  }
+
+  // SSH deployment operations
+  async createDeploymentLog(log: InsertDeploymentLog): Promise<DeploymentLog> {
+    const [newLog] = await db
+      .insert(deploymentLogs)
+      .values(log)
+      .returning();
+    return newLog;
+  }
+
+  async getDeploymentLogs(contentId: number): Promise<DeploymentLog[]> {
+    return await db
+      .select()
+      .from(deploymentLogs)
+      .where(eq(deploymentLogs.contentId, contentId))
+      .orderBy(desc(deploymentLogs.deployedAt));
   }
 }
 
