@@ -5,6 +5,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   insertAffiliateProgramSchema,
   insertAffiliateLinkSchema,
+  insertAffiliateApplicationSchema,
   insertUserSettingsSchema,
 } from "@shared/schema";
 import { z } from "zod";
@@ -192,6 +193,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating settings:", error);
         res.status(500).json({ message: "Failed to update settings" });
       }
+    }
+  });
+
+  // Affiliate Applications API
+  app.get("/api/applications", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const applications = await storage.getUserApplications(userId);
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
+  app.post("/api/applications", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertAffiliateApplicationSchema.parse(req.body);
+      const application = await storage.createApplication(userId, validatedData);
+      res.status(201).json(application);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        console.error("Error creating application:", error);
+        res.status(500).json({ message: "Failed to create application" });
+      }
+    }
+  });
+
+  app.put("/api/applications/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      const validatedData = insertAffiliateApplicationSchema.partial().parse(req.body);
+      const application = await storage.updateApplication(id, userId, validatedData);
+      res.json(application);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        console.error("Error updating application:", error);
+        res.status(500).json({ message: "Failed to update application" });
+      }
+    }
+  });
+
+  app.delete("/api/applications/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const id = parseInt(req.params.id);
+      await storage.deleteApplication(id, userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting application:", error);
+      res.status(500).json({ message: "Failed to delete application" });
     }
   });
 

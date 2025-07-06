@@ -7,13 +7,15 @@ import {
   Link as LinkIcon, 
   TrendingUp, 
   Settings,
-  User
+  User,
+  FileText
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
   { name: "Programs", href: "/programs", icon: Handshake },
   { name: "Links", href: "/links", icon: LinkIcon },
+  { name: "Applications", href: "/applications", icon: FileText },
   { name: "Analytics", href: "/analytics", icon: TrendingUp },
   { name: "Settings", href: "/settings", icon: Settings },
 ];

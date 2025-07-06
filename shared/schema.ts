@@ -87,6 +87,27 @@ export const performanceData = pgTable("performance_data", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Affiliate program applications table
+export const affiliateApplications = pgTable("affiliate_applications", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  programName: varchar("program_name").notNull(),
+  companyName: varchar("company_name").notNull(),
+  website: varchar("website"),
+  applicationUrl: varchar("application_url"),
+  applicationDate: timestamp("application_date").defaultNow(),
+  status: varchar("status").notNull().default("pending"), // pending, approved, rejected, under_review
+  expectedResponseTime: varchar("expected_response_time"), // e.g., "7-14 days"
+  followUpDate: timestamp("follow_up_date"),
+  notes: text("notes"),
+  requirements: text("requirements"), // Store specific requirements mentioned
+  contactEmail: varchar("contact_email"),
+  commissionRate: varchar("commission_rate"),
+  priority: varchar("priority").default("medium"), // high, medium, low
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // User settings table
 export const userSettings = pgTable("user_settings", {
   id: serial("id").primaryKey(),
@@ -105,6 +126,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   programs: many(affiliatePrograms),
   links: many(affiliateLinks),
   performanceData: many(performanceData),
+  applications: many(affiliateApplications),
   settings: one(userSettings),
 }));
 
@@ -144,6 +166,13 @@ export const performanceDataRelations = relations(performanceData, ({ one }) => 
   }),
 }));
 
+export const affiliateApplicationsRelations = relations(affiliateApplications, ({ one }) => ({
+  user: one(users, {
+    fields: [affiliateApplications.userId],
+    references: [users.id],
+  }),
+}));
+
 export const userSettingsRelations = relations(userSettings, ({ one }) => ({
   user: one(users, {
     fields: [userSettings.userId],
@@ -174,6 +203,13 @@ export const insertPerformanceDataSchema = createInsertSchema(performanceData).o
   createdAt: true,
 });
 
+export const insertAffiliateApplicationSchema = createInsertSchema(affiliateApplications).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertUserSettingsSchema = createInsertSchema(userSettings).omit({
   id: true,
   userId: true,
@@ -187,6 +223,8 @@ export type InsertAffiliateProgram = z.infer<typeof insertAffiliateProgramSchema
 export type AffiliateProgram = typeof affiliatePrograms.$inferSelect;
 export type InsertAffiliateLink = z.infer<typeof insertAffiliateLinkSchema>;
 export type AffiliateLink = typeof affiliateLinks.$inferSelect;
+export type InsertAffiliateApplication = z.infer<typeof insertAffiliateApplicationSchema>;
+export type AffiliateApplication = typeof affiliateApplications.$inferSelect;
 export type InsertPerformanceData = z.infer<typeof insertPerformanceDataSchema>;
 export type PerformanceData = typeof performanceData.$inferSelect;
 export type InsertUserSettings = z.infer<typeof insertUserSettingsSchema>;

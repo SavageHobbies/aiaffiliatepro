@@ -2,6 +2,7 @@ import {
   users,
   affiliatePrograms,
   affiliateLinks,
+  affiliateApplications,
   performanceData,
   userSettings,
   type User,
@@ -10,6 +11,8 @@ import {
   type InsertAffiliateProgram,
   type AffiliateLink,
   type InsertAffiliateLink,
+  type AffiliateApplication,
+  type InsertAffiliateApplication,
   type PerformanceData,
   type InsertPerformanceData,
   type UserSettings,
@@ -36,6 +39,13 @@ export interface IStorage {
   updateLink(id: number, userId: string, link: Partial<InsertAffiliateLink>): Promise<AffiliateLink>;
   deleteLink(id: number, userId: string): Promise<void>;
   getLink(id: number, userId: string): Promise<AffiliateLink | undefined>;
+  
+  // Affiliate application operations
+  getUserApplications(userId: string): Promise<AffiliateApplication[]>;
+  createApplication(userId: string, application: InsertAffiliateApplication): Promise<AffiliateApplication>;
+  updateApplication(id: number, userId: string, application: Partial<InsertAffiliateApplication>): Promise<AffiliateApplication>;
+  deleteApplication(id: number, userId: string): Promise<void>;
+  getApplication(id: number, userId: string): Promise<AffiliateApplication | undefined>;
   
   // Performance data operations
   createPerformanceData(data: InsertPerformanceData): Promise<PerformanceData>;
@@ -248,6 +258,46 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return upsertedSettings;
+  }
+
+  // Affiliate application operations
+  async getUserApplications(userId: string): Promise<AffiliateApplication[]> {
+    return await db
+      .select()
+      .from(affiliateApplications)
+      .where(eq(affiliateApplications.userId, userId))
+      .orderBy(desc(affiliateApplications.applicationDate));
+  }
+
+  async createApplication(userId: string, application: InsertAffiliateApplication): Promise<AffiliateApplication> {
+    const [newApplication] = await db
+      .insert(affiliateApplications)
+      .values({ ...application, userId })
+      .returning();
+    return newApplication;
+  }
+
+  async updateApplication(id: number, userId: string, application: Partial<InsertAffiliateApplication>): Promise<AffiliateApplication> {
+    const [updatedApplication] = await db
+      .update(affiliateApplications)
+      .set({ ...application, updatedAt: new Date() })
+      .where(and(eq(affiliateApplications.id, id), eq(affiliateApplications.userId, userId)))
+      .returning();
+    return updatedApplication;
+  }
+
+  async deleteApplication(id: number, userId: string): Promise<void> {
+    await db
+      .delete(affiliateApplications)
+      .where(and(eq(affiliateApplications.id, id), eq(affiliateApplications.userId, userId)));
+  }
+
+  async getApplication(id: number, userId: string): Promise<AffiliateApplication | undefined> {
+    const [application] = await db
+      .select()
+      .from(affiliateApplications)
+      .where(and(eq(affiliateApplications.id, id), eq(affiliateApplications.userId, userId)));
+    return application;
   }
 }
 

@@ -121,7 +121,8 @@ The application follows a modern web architecture with a React frontend, Express
 
 ## Changelog
 
-- July 06, 2025. Initial setup
+- July 06, 2025: Initial setup
+- July 06, 2025: Added affiliate application tracking system with full CRUD operations
 
 ## User Preferences
 

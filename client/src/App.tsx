@@ -9,6 +9,7 @@ import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Programs from "@/pages/programs";
 import Links from "@/pages/links";
+import Applications from "@/pages/applications";
 import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
 import Sidebar from "@/components/sidebar";
@@ -35,6 +36,7 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/programs" component={Programs} />
           <Route path="/links" component={Links} />
+          <Route path="/applications" component={Applications} />
           <Route path="/analytics" component={Analytics} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
