@@ -8,8 +8,12 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
-if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? (process.env.PROD_DOMAINS || '').split(',')
+  : ['http://localhost:5173'];
+
+if (process.env.NODE_ENV === 'production' && !process.env.PROD_DOMAINS) {
+  throw new Error("Environment variable PROD_DOMAINS not provided in production");
 }
 
 const getOidcConfig = memoize(
@@ -84,8 +88,7 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
+  for (const domain of allowedOrigins) {
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
