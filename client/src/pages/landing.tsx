@@ -25,7 +25,7 @@ export default function Landing() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg"></div>
-            <span className="text-2xl font-bold text-white">AffiliateHub</span>
+            <span className="text-2xl font-bold text-white">AI Affiliate Pro</span>
           </div>
           <Button 
             variant="outline" 
@@ -76,10 +76,10 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* Why AffiliateHub Beats The Competition */}
+        {/* Why AI Affiliate Pro Beats The Competition */}
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-            Why Top Affiliates Choose AffiliateHub
+            Why Top Affiliates Choose AI Affiliate Pro
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
             Features that other platforms wish they had. Built by affiliates, for affiliates.
@@ -196,7 +196,7 @@ export default function Landing() {
                   <th className="py-4 px-6 text-slate-400 font-medium"></th>
                   <th className="py-4 px-6 text-center">
                     <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold">
-                      AffiliateHub
+                      AI Affiliate Pro
                     </div>
                   </th>
                   <th className="py-4 px-6 text-center text-slate-400">ClickBank Analytics</th>
@@ -260,7 +260,7 @@ export default function Landing() {
             Ready to 10x Your Affiliate Revenue?
           </h2>
           <p className="text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
-            Join thousands of affiliate marketers who trust AffiliateHub to scale their business and maximize their earnings.
+            Join thousands of affiliate marketers who trust AI Affiliate Pro to scale their business and maximize their earnings.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
@@ -282,10 +282,10 @@ export default function Landing() {
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">
               <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded"></div>
-              <span className="text-lg font-semibold text-slate-300">AffiliateHub</span>
+              <span className="text-lg font-semibold text-slate-300">AI Affiliate Pro</span>
             </div>
             <p className="text-slate-500 text-sm">
-              © 2025 AffiliateHub. Built for affiliate marketers who mean business.
+              © 2025 AI Affiliate Pro. Built for affiliate marketers who mean business.
             </p>
           </div>
         </footer>

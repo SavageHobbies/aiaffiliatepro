@@ -142,7 +142,7 @@ export default function Dashboard() {
                   <CheckCircle className="text-green-600 mr-4 h-5 w-5" />
                   <div>
                     <p className="font-medium text-slate-900">Dashboard setup complete</p>
-                    <p className="text-sm text-slate-600">Welcome to AffiliateHub! Your dashboard is ready.</p>
+                    <p className="text-sm text-slate-600">Welcome to AI Affiliate Pro! Your dashboard is ready.</p>
                   </div>
                   <span className="ml-auto text-sm text-slate-500">Just now</span>
                 </div>

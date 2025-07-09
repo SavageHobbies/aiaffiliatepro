@@ -41,7 +41,7 @@ export default function Sidebar() {
     <div className="w-64 bg-white shadow-lg border-r border-slate-200">
       {/* Logo */}
       <div className="p-6">
-        <h1 className="text-xl font-bold text-slate-900">AffiliateHub</h1>
+        <h1 className="text-xl font-bold text-slate-900">AI Affiliate Pro</h1>
       </div>
       
       {/* Navigation */}

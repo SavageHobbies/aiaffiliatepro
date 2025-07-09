@@ -95,7 +95,7 @@ export default function Onboarding() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-slate-900 mb-4">
-            Welcome to AffiliateHub! 🚀
+            Welcome to AI Affiliate Pro! 🚀
           </h1>
           <p className="text-xl text-slate-600 max-w-3xl mx-auto">
             Your all-in-one platform for affiliate marketing success. Let's get you set up to start 
@@ -106,7 +106,7 @@ export default function Onboarding() {
         {/* Platform Capabilities */}
         <div className="mb-12">
           <h2 className="text-2xl font-semibold text-slate-900 mb-6 text-center">
-            What You Can Do With AffiliateHub
+            What You Can Do With AI Affiliate Pro
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {features.map((feature, index) => (
