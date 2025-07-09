@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { sessionMiddleware, isAuthenticated } from "./auth";
+import passport from 'passport';
 import { 
   insertAffiliateProgramSchema,
   insertAffiliateLinkSchema,
@@ -13,13 +14,44 @@ import {
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  app.use(sessionMiddleware);
+  app.use(passport.initialize());
+  app.use(passport.session());
 
   // Auth routes
+  app.post('/api/login', passport.authenticate('local'), (req, res) => {
+    res.json({ message: 'Logged in successfully' });
+  });
+
+  app.post('/api/register', async (req, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      const user = await storage.createUser({ email, password, firstName, lastName } as any);
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Failed to log in after registration' });
+        }
+        res.json({ message: 'Registered and logged in successfully' });
+      });
+    } catch (error) {
+      console.error("Error registering user:", error);
+      res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+
+  app.get('/api/logout', (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Failed to log out' });
+      }
+      res.json({ message: 'Logged out successfully' });
+    });
+  });
+
+  // User Profile API
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
@@ -28,10 +60,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/auth/user", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { firstName, lastName, website } = req.body;
+      
+      const updatedUser = await storage.upsertUser({
+        id: userId,
+        firstName,
+        lastName,
+        website,
+        email: req.user.email,
+        profileImageUrl: req.user.profileImageUrl,
+      });
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
   // Affiliate Programs API
   app.get("/api/programs", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const programs = await storage.getUserPrograms(userId);
       res.json(programs);
     } catch (error) {
@@ -42,7 +95,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/programs", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertAffiliateProgramSchema.parse(req.body);
       const program = await storage.createProgram(userId, validatedData);
       res.status(201).json(program);
@@ -58,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/programs/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const programId = parseInt(req.params.id);
       const validatedData = insertAffiliateProgramSchema.partial().parse(req.body);
       const program = await storage.updateProgram(programId, userId, validatedData);
@@ -75,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/programs/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const programId = parseInt(req.params.id);
       await storage.deleteProgram(programId, userId);
       res.status(204).send();
@@ -88,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Affiliate Links API
   app.get("/api/links", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const links = await storage.getUserLinks(userId);
       res.json(links);
     } catch (error) {
@@ -99,7 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/links", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertAffiliateLinkSchema.parse(req.body);
       const link = await storage.createLink(userId, validatedData);
       res.status(201).json(link);
@@ -115,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/links/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const linkId = parseInt(req.params.id);
       const validatedData = insertAffiliateLinkSchema.partial().parse(req.body);
       const link = await storage.updateLink(linkId, userId, validatedData);
@@ -132,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/links/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const linkId = parseInt(req.params.id);
       await storage.deleteLink(linkId, userId);
       res.status(204).send();
@@ -145,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Analytics API
   app.get("/api/analytics/stats", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const stats = await storage.getUserStats(userId);
       res.json(stats);
     } catch (error) {
@@ -156,7 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/analytics/performance", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { startDate, endDate } = req.query;
       
       const start = startDate ? new Date(startDate as string) : undefined;
@@ -173,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User Settings API
   app.get("/api/settings", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const settings = await storage.getUserSettings(userId);
       res.json(settings || {});
     } catch (error) {
@@ -184,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/settings", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertUserSettingsSchema.parse(req.body);
       const settings = await storage.upsertUserSettings(userId, validatedData);
       res.json(settings);
@@ -201,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Keys routes
   app.put('/api/settings/api-keys', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { geminiApiKey, openaiApiKey } = req.body;
       
       // Update user settings with API keys
@@ -220,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SSH Connection test
   app.post('/api/settings/ssh/test', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const settings = await storage.getUserSettings(userId);
       
       if (!settings?.sshHost || !settings?.sshUsername || !settings?.sshPassword) {
@@ -237,9 +290,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Deploy content
-  app.post('/api/content/:id/deploy', isAuthenticated, async (req: any, res) => {
+  app.post('/api/generated-content/:id/deploy', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const contentId = parseInt(req.params.id);
       
       // Get the content to deploy
@@ -272,10 +325,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the deployment
       await storage.createDeploymentLog({
         contentId,
+        userId,
         status: "success",
-        deploymentUrl,
         deploymentPath,
-        notes: "Deployed via SSH",
+        logMessage: "Deployed via SSH",
       });
 
       res.json({ 
@@ -292,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Affiliate Applications API
   app.get("/api/applications", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const applications = await storage.getUserApplications(userId);
       res.json(applications);
     } catch (error) {
@@ -303,7 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/applications", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertAffiliateApplicationSchema.parse(req.body);
       const application = await storage.createApplication(userId, validatedData);
       res.status(201).json(application);
@@ -319,7 +372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/applications/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       const validatedData = insertAffiliateApplicationSchema.partial().parse(req.body);
       const application = await storage.updateApplication(id, userId, validatedData);
@@ -336,7 +389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/applications/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       await storage.deleteApplication(id, userId);
       res.status(204).send();
@@ -346,32 +399,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update user profile
-  app.put("/api/auth/user", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { firstName, lastName, website } = req.body;
-      
-      const updatedUser = await storage.upsertUser({
-        id: userId,
-        firstName,
-        lastName,
-        website,
-        email: req.user.claims.email,
-        profileImageUrl: req.user.claims.profile_image_url,
-      });
-      
-      res.json(updatedUser);
-    } catch (error) {
-      console.error("Error updating user:", error);
-      res.status(500).json({ message: "Failed to update user" });
-    }
-  });
 
   // Commission payment routes
   app.get('/api/payments', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const payments = await storage.getUserCommissionPayments(userId);
       res.json(payments);
     } catch (error) {
@@ -382,7 +414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/payments', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const payment = await storage.createCommissionPayment(userId, req.body);
       res.json(payment);
     } catch (error) {
@@ -393,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/payments/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       const payment = await storage.updateCommissionPayment(id, userId, req.body);
       res.json(payment);
@@ -405,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/payments/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       await storage.deleteCommissionPayment(id, userId);
       res.json({ success: true });
@@ -439,9 +471,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Content performance routes
-  app.get('/api/content', isAuthenticated, async (req: any, res) => {
+  app.get('/api/content-performance', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const content = await storage.getUserContentPerformance(userId);
       res.json(content);
     } catch (error) {
@@ -450,9 +482,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/content', isAuthenticated, async (req: any, res) => {
+  app.post('/api/content-performance', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const content = await storage.createContentPerformance(userId, req.body);
       res.json(content);
     } catch (error) {
@@ -461,9 +493,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/content/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/content-performance/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       const content = await storage.updateContentPerformance(id, userId, req.body);
       res.json(content);
@@ -473,9 +505,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/content/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/content-performance/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       await storage.deleteContentPerformance(id, userId);
       res.json({ success: true });
@@ -488,7 +520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Competitor tracking routes
   app.get('/api/competitors', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const competitors = await storage.getUserCompetitorTracking(userId);
       res.json(competitors);
     } catch (error) {
@@ -499,7 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/competitors', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const competitor = await storage.createCompetitorTracking(userId, req.body);
       res.json(competitor);
     } catch (error) {
@@ -510,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/competitors/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       const competitor = await storage.updateCompetitorTracking(id, userId, req.body);
       res.json(competitor);
@@ -522,7 +554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/competitors/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       await storage.deleteCompetitorTracking(id, userId);
       res.json({ success: true });
@@ -535,7 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Advanced analytics route
   app.get('/api/analytics/advanced', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const stats = await storage.getAdvancedUserStats(userId);
       res.json(stats);
     } catch (error) {
@@ -547,7 +579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Content generation routes
   app.get('/api/generated-content', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const content = await storage.getUserGeneratedContent(userId);
       res.json(content);
     } catch (error) {
@@ -558,7 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/generated-content', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertGeneratedContentSchema.parse(req.body);
       const content = await storage.createGeneratedContent(userId, validatedData);
       res.status(201).json(content);
@@ -574,7 +606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/generated-content/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       const validatedData = insertGeneratedContentSchema.partial().parse(req.body);
       const content = await storage.updateGeneratedContent(id, userId, validatedData);
@@ -591,7 +623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/generated-content/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       await storage.deleteGeneratedContent(id, userId);
       res.json({ success: true });
@@ -603,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/generated-content/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       const content = await storage.getGeneratedContent(id, userId);
       if (!content) {
@@ -644,9 +676,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Content Generation endpoint
-  app.post("/api/generate-content", isAuthenticated, async (req, res) => {
+  app.post("/api/generate-content", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user.id;
       const { aiApiKey, prompt, contentType, keywords, selectedPrograms, title } = req.body;
       
       if (!userId) {
@@ -673,7 +705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: generatedContent,
         message: "Content generated successfully" 
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating content:", error);
       res.status(500).json({ message: "Failed to generate content", error: error.message });
     }

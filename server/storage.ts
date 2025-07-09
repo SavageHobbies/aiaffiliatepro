@@ -44,11 +44,12 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sum, count, sql } from "drizzle-orm";
+import crypto from 'crypto';
 
 export interface IStorage {
-  // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(userData: Omit<UpsertUser, 'id'>): Promise<User>;
   
   // Affiliate program operations
   getUserPrograms(userId: string): Promise<AffiliateProgram[]>;
@@ -152,7 +153,7 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations (required for Replit Auth)
+  
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -171,6 +172,29 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: Omit<UpsertUser, 'id'>): Promise<User> {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hashedPassword = crypto.pbkdf2Sync(userData.password, salt, 1000, 64, 'sha512').toString('hex');
+    const id = crypto.randomUUID();
+
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        id,
+        ...userData,
+        hashedPassword,
+        salt,
+      })
+      .returning();
+
+    return newUser;
   }
 
   // Affiliate program operations
