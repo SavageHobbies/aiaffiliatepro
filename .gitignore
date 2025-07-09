@@ -5,3 +5,5 @@ server/public
 vite.config.ts.*
 *.tar.gz
 client_secret_*.json
+client/src/images/client_secret_*.json
+*.json
