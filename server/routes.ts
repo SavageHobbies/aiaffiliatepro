@@ -48,6 +48,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  app.get('/api/auth/google',
+    passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+  app.get('/api/auth/google/callback', 
+    passport.authenticate('google', { failureRedirect: '/login' }),
+    function(req, res) {
+      // Successful authentication, redirect home.
+      res.redirect('/');
+    });
+
   // User Profile API
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
