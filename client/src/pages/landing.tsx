@@ -17,6 +17,8 @@ import {
   Clock,
   Target
 } from "lucide-react";
+import logo from "@/images/logo_aiaffiliatepro.png";
+import Header from "@/components/header";
 
 export default function Landing() {
   return (
@@ -61,11 +63,10 @@ export default function Landing() {
       </Helmet>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         {/* Navigation */}
-        <nav className="container mx-auto px-4 py-6">
+        <Header />
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <img src="/src/images/logo_aiaffiliatepro.png" alt="AI Affiliate Pro Logo" className="h-8 w-8" />
-            <span className="text-2xl font-bold text-white">AI Affiliate Pro</span>
+<div className="flex items-center">
+            <img src={logo} alt="Logo" className="h-32 w-32" />
           </div>
           <Button 
             variant="outline" 
@@ -75,7 +76,7 @@ export default function Landing() {
             Sign In
           </Button>
         </div>
-      </nav>
+      {/* Navigation removed; using Header component */}
 
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}

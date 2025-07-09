@@ -7,36 +7,30 @@ import { sessions } from '../shared/schema';
 import connectPg from 'connect-pg-simple';
 import session from 'express-session';
 
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  throw new Error("Missing Google OAuth environment variables");
-}
-
 const pgSession = connectPg(session);
 
+// Local Strategy
 passport.use(new LocalStrategy({
   usernameField: 'email'
 }, async (email, password, done) => {
   try {
     const user = await storage.getUserByEmail(email);
-    if (!user) {
-      return done(null, false, { message: 'Incorrect email or password.' });
-    }
-
-    if (!user.salt) {
+    if (!user || !user.salt) {
       return done(null, false, { message: 'Incorrect email or password.' });
     }
     const hashedPassword = crypto.pbkdf2Sync(password, user.salt, 1000, 64, 'sha512').toString('hex');
     if (hashedPassword !== user.hashedPassword) {
       return done(null, false, { message: 'Incorrect email or password.' });
     }
-
     return done(null, user);
   } catch (err) {
     return done(err);
   }
 }));
 
-passport.use(new GoogleStrategy({
+// Google OAuth Strategy (only in production if vars present)
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: "/api/auth/google/callback"
@@ -50,9 +44,12 @@ passport.use(new GoogleStrategy({
       profileImageUrl: profile.photos[0].value,
     });
     return cb(null, user);
-  }
-));
+  }));
+} else if (process.env.NODE_ENV === "development") {
+  console.warn("Google OAuth environment variables missing, skipping Google authentication in development mode.");
+}
 
+// Session serialization
 passport.serializeUser((user: any, done) => {
   done(null, user.id);
 });
@@ -68,7 +65,7 @@ passport.deserializeUser(async (id: string, done) => {
 
 export const sessionMiddleware = session({
   store: new pgSession({
-    conString: process.env.DATABASE_URL,
+    conString: process.env.DATABASE_URL || '',
     createTableIfMissing: true,
     tableName: 'sessions',
   }),

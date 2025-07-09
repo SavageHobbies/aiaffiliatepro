@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Bell, LogOut } from "lucide-react";
+import logo from "@/images/logo_aiaffiliatepro.png";
 
 export default function Header() {
   const handleLogout = () => {
@@ -9,10 +10,7 @@ export default function Header() {
   return (
     <header className="bg-white shadow-sm border-b border-slate-200 px-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <img src="/src/images/logo_aiaffiliatepro.png" alt="AI Affiliate Pro Logo" className="h-8 w-8" />
-          <span className="text-2xl font-bold text-slate-900">AI Affiliate Pro</span>
-        </div>
+        <img src={logo} alt="Logo" className="h-32 w-32" />
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="sm" className="p-2 text-slate-400 hover:text-slate-600">
             <Bell className="h-5 w-5" />
