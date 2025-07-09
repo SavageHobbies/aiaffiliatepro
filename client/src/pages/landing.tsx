@@ -296,7 +296,7 @@ export default function Landing() {
             Ready to 10x Your Affiliate Revenue?
           </h2>
           <p className="text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
-            Join thousands of solo affiliate marketers and affiliate businesses who trust AI Affiliate Pro, the ultimate affiliate business management tool, to scale their operations and increase affiliate earnings.
+            Join thousands of affiliate marketers who trust AI Affiliate Pro to scale their business and maximize their earnings.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 

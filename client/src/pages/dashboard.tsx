@@ -14,11 +14,11 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<any>({
     queryKey: ["/api/analytics/stats"],
   });
 
-  const { data: programs, isLoading: programsLoading } = useQuery({
+  const { data: programs, isLoading: programsLoading } = useQuery<any[]>({
     queryKey: ["/api/programs"],
   });
 
@@ -136,7 +136,7 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {programs?.length > 0 ? (
+            {(programs ?? []).length > 0 ? (
               <>
                 <div className="flex items-center p-4 bg-green-50 border border-green-200 rounded-lg">
                   <CheckCircle className="text-green-600 mr-4 h-5 w-5" />
