@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -90,8 +91,14 @@ export default function Onboarding() {
   const progress = (completedSteps.length / setupSteps.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-6xl mx-auto">
+    <>
+      <Helmet>
+        <title>Getting Started with AI Affiliate Pro | Setup & Features</title>
+        <meta name="description" content="Learn how to set up your AI Affiliate Pro account. Explore features like multi-network analytics, smart link management, AI content generation, and fraud detection." />
+        <meta name="keywords" content="AI Affiliate Pro setup, affiliate marketing getting started, affiliate platform features, affiliate analytics, affiliate link management, AI content generation affiliate" />
+      </Helmet>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-slate-900 mb-4">
@@ -247,6 +254,6 @@ export default function Onboarding() {
           </p>
         </div>
       </div>
-    </div>
+    </div></>
   );
 }

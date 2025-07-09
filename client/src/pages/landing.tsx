@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -19,9 +20,48 @@ import {
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Navigation */}
-      <nav className="container mx-auto px-4 py-6">
+    <>
+      <Helmet>
+        <title>AI Affiliate Pro: All-in-One Affiliate Marketing Platform for Tracking & Automation</title>
+        <meta name="description" content="Scale your affiliate business with AI Affiliate Pro. Get multi-network tracking, AI content generation, automated publishing, and real-time analytics. Start your free trial today!" />
+        <meta name="keywords" content="affiliate marketing platform, affiliate management software, affiliate tracker SaaS, multi-network affiliate tracking, AI affiliate content generation, automated affiliate publishing, affiliate analytics software" />
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "AI Affiliate Pro",
+              "applicationCategory": "BusinessApplication",
+              "operatingSystem": "Web (Platform Independent)",
+              "description": "AI Affiliate Pro is your all-in-one affiliate marketing platform, offering AI-powered revenue optimization, automated cross-network reconciliation for multi-network affiliate tracking, and real-time affiliate fraud detection. Streamline affiliate operations and 10x your revenue with our advanced affiliate tracker SaaS features.",
+              "abstract": "The ultimate affiliate marketing hub for tracking, automation, AI content generation, and performance analytics.",
+              "keywords": "affiliate marketing platform, affiliate management software, affiliate tracker SaaS, multi-network affiliate tracking, AI affiliate content generation, automated affiliate publishing, affiliate analytics software, affiliate business management",
+              "offers": {
+                "@type": "Offer",
+                "price": "49",
+                "priceCurrency": "USD",
+                "description": "14-day free trial, then $49/month. Cancel anytime."
+              },
+              "featureList": [
+                "AI Revenue Optimization",
+                "Real-Time Fraud Detection",
+                "Automated Cross-Network Affiliate Reporting",
+                "Global Tax Compliance",
+                "Sub-Second Data Sync",
+                "Revenue Forecasting",
+                "Multi-Network Affiliate Tracking",
+                "AI Affiliate Content Generation",
+                "Automated Affiliate Publishing",
+                "Affiliate Link Management"
+              ],
+              "url": "https://www.aiaffiliatepro.com"
+            }
+          `}
+        </script>
+      </Helmet>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        {/* Navigation */}
+        <nav className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg"></div>
@@ -30,7 +70,7 @@ export default function Landing() {
           <Button 
             variant="outline" 
             className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
-            onClick={() => window.location.href = "/api/login"}
+            onClick={() => window.location.href = "/api/auth/google"}
           >
             Sign In
           </Button>
@@ -47,21 +87,17 @@ export default function Landing() {
             </div>
           </div>
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-            Scale Your Affiliate
-            <br />
-            <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-              Business
-            </span>
+            Scale Your Affiliate Business with the Leading <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">Affiliate Marketing Platform</span>
           </h1>
           <p className="text-xl text-slate-400 mb-10 max-w-3xl mx-auto leading-relaxed">
-            The only affiliate platform with AI-powered optimization, automated cross-network reconciliation, 
-            and real-time fraud detection. 10x your revenue with features others can't match.
+            AI Affiliate Pro is your all-in-one affiliate marketing platform, offering AI-powered revenue optimization, automated cross-network reconciliation for multi-network affiliate tracking,
+            and real-time affiliate fraud detection. Streamline affiliate operations and 10x your revenue with our advanced affiliate tracker SaaS features.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
               size="lg" 
               className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-lg px-8 py-4 shadow-lg shadow-blue-500/25"
-              onClick={() => window.location.href = "/api/login"}
+              onClick={() => window.location.href = "/api/auth/google"}
             >
               Start Free Trial
               <ArrowRight className="ml-2 w-5 h-5" />
@@ -82,7 +118,7 @@ export default function Landing() {
             Why Top Affiliates Choose AI Affiliate Pro
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Features that other platforms wish they had. Built by affiliates, for affiliates.
+            Discover features designed for affiliate marketing efficiency, from AI content for affiliate marketing to robust affiliate analytics software. Built to solve affiliate marketing pain points.
           </p>
         </div>
 
@@ -97,7 +133,7 @@ export default function Landing() {
               </div>
               <h3 className="text-xl font-semibold mb-3 text-white">AI Revenue Optimization</h3>
               <p className="text-slate-400 leading-relaxed">
-                Our AI analyzes 100+ data points to automatically optimize your campaigns and predict your best-performing content.
+                Leverage AI powered affiliate tools. Our AI analyzes 100+ data points for campaign optimization and predicts your best-performing content, boosting your affiliate ROI analysis.
               </p>
             </CardContent>
           </Card>
@@ -125,9 +161,9 @@ export default function Landing() {
               <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-teal-600 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                 <Repeat className="h-7 w-7 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Cross-Network Reconciliation</h3>
+              <h3 className="text-xl font-semibold mb-3 text-white">Automated Cross-Network Affiliate Reporting</h3>
               <p className="text-slate-400 leading-relaxed">
-                Automatically sync and reconcile data across 50+ affiliate networks. No more manual CSV imports or data mismatches.
+                Achieve seamless multi-network affiliate tracking. Automatically sync and reconcile data for commission reconciliation across 50+ affiliate networks. Eliminate manual affiliate work.
               </p>
             </CardContent>
           </Card>
@@ -260,13 +296,13 @@ export default function Landing() {
             Ready to 10x Your Affiliate Revenue?
           </h2>
           <p className="text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
-            Join thousands of affiliate marketers who trust AI Affiliate Pro to scale their business and maximize their earnings.
+            Join thousands of solo affiliate marketers and affiliate businesses who trust AI Affiliate Pro, the ultimate affiliate business management tool, to scale their operations and increase affiliate earnings.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
               size="lg" 
               className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-lg px-10 py-4 shadow-lg shadow-blue-500/25"
-              onClick={() => window.location.href = "/api/login"}
+              onClick={() => window.location.href = "/api/auth/google"}
             >
               Start Free Trial
               <ArrowRight className="ml-2 w-5 h-5" />
@@ -290,6 +326,6 @@ export default function Landing() {
           </div>
         </footer>
       </div>
-    </div>
+    </div></>
   );
 }
