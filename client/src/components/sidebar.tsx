@@ -40,7 +40,8 @@ export default function Sidebar() {
   return (
     <div className="w-64 bg-white shadow-lg border-r border-slate-200">
       {/* Logo */}
-      <div className="p-6">
+      <div className="p-6 flex items-center space-x-2">
+        <img src="/src/images/logo_aiaffiliatepro.png" alt="AI Affiliate Pro Logo" className="h-8 w-8" />
         <h1 className="text-xl font-bold text-slate-900">AI Affiliate Pro</h1>
       </div>
       

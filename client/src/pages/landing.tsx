@@ -64,7 +64,7 @@ export default function Landing() {
         <nav className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg"></div>
+            <img src="/src/images/logo_aiaffiliatepro.png" alt="AI Affiliate Pro Logo" className="h-8 w-8" />
             <span className="text-2xl font-bold text-white">AI Affiliate Pro</span>
           </div>
           <Button 
@@ -317,7 +317,7 @@ export default function Landing() {
         <footer className="mt-20 pt-12 border-t border-slate-800">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded"></div>
+              <img src="/src/images/logo_aiaffiliatepro.png" alt="AI Affiliate Pro Logo" className="w-6 h-6" />
               <span className="text-lg font-semibold text-slate-300">AI Affiliate Pro</span>
             </div>
             <p className="text-slate-500 text-sm">
