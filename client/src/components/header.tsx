@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Bell, LogOut } from "lucide-react";
-import logo from "@/images/logo_aiaffiliatepro.png";
+import logo from "@/images/theone_working_png.png";
 
 export default function Header() {
   const handleLogout = () => {

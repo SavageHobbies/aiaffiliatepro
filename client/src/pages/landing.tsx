@@ -11,7 +11,7 @@ import {
   Clock,
   Target
 } from "lucide-react";
-import logo from "@/images/logo_aiaffiliatepro.png";
+import logo from "@/images/theone_working_png.png";
 
 export default function Landing() {
   return (
