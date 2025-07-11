@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { sessionMiddleware, isAuthenticated } from "./auth";
@@ -14,6 +14,12 @@ import {
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Middleware to block access to .env files under /api/
+  app.use('/api/\\.env(\\..*)?', (req: Request, res: Response, next: NextFunction) => {
+    console.warn(`Blocked attempted access to sensitive file: ${req.path}`);
+    res.status(404).json({ message: 'Not Found' });
+  });
+
   app.use(sessionMiddleware);
   app.use(passport.initialize());
   app.use(passport.session());
