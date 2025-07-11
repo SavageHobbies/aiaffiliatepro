@@ -41,8 +41,6 @@ import {
   type InsertGeneratedContent,
   type DeploymentLog,
   type InsertDeploymentLog,
-  // Assuming these types are from @shared/schema and include password, hashedPassword, salt
-  type InsertUser,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sum, count, sql } from "drizzle-orm";
@@ -50,7 +48,7 @@ import crypto from 'crypto';
 
 // Define a type for creating a user via local registration (includes password)
 // Assuming InsertUser from @shared/schema includes email, password, firstName, lastName
-type CreateUserPayload = Omit<InsertUser, 'id' | 'hashedPassword' | 'salt' | 'createdAt' | 'updatedAt'> & {
+type CreateUserPayload = Omit<UpsertUser, 'id' | 'hashedPassword' | 'salt' | 'createdAt' | 'updatedAt'> & {
   password: string;
 };
 
@@ -207,12 +205,13 @@ export class DatabaseStorage implements IStorage {
 
   // Handles updates for existing users, especially from OAuth (where password/salt aren't provided)
   async upsertUser(userData: UpsertUser): Promise<User> {
-    // Attempt to find user by ID if provided, or by email if ID is not available (e.g., from OAuth claims)
+    // Attempt to find user first by email, then by ID
     let existingUser: User | undefined;
-    if (userData.id) {
-      existingUser = await this.getUserById(userData.id);
-    } else if (userData.email) {
+    if (userData.email) {
       existingUser = await this.getUserByEmail(userData.email);
+    }
+    if (!existingUser && userData.id) {
+      existingUser = await this.getUserById(userData.id);
     }
 
     if (existingUser) {
@@ -232,26 +231,32 @@ export class DatabaseStorage implements IStorage {
       return updatedUser;
     } else {
       // User does not exist, insert a new user (this path is primarily for initial OAuth user creation)
-      // Ensure all required fields for InsertUser are present.
-      // For OAuth, password and salt are NOT provided, so they must be optional in schema or handled.
-      // Assuming 'hashedPassword' and 'salt' are nullable in your schema for OAuth users.
-      const id = userData.id || crypto.randomUUID(); // Generate ID if not provided (e.g., for new OAuth users)
-      const [newUser] = await db
-        .insert(users)
-        .values({
-          id,
-          email: userData.email!, // Email is crucial for new users
-          firstName: userData.firstName || null,
-          lastName: userData.lastName || null,
-          profileImageUrl: userData.profileImageUrl || null,
-          website: userData.website || null,
-          hashedPassword: null, // OAuth users don't have local passwords
-          salt: null, // OAuth users don't have local passwords
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .returning();
-      return newUser;
+      try {
+        const id = userData.id || crypto.randomUUID();
+        const [newUser] = await db
+          .insert(users)
+          .values({
+            id,
+            email: userData.email!,
+            firstName: userData.firstName || null,
+            lastName: userData.lastName || null,
+            profileImageUrl: userData.profileImageUrl || null,
+            website: userData.website || null,
+            hashedPassword: null,
+            salt: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .returning();
+        return newUser;
+      } catch (err: any) {
+        if (err.code === '23505') {
+          // Duplicate key (email) exists, fetch and return existing user
+          const existing = await this.getUserByEmail(userData.email!);
+          if (existing) return existing;
+        }
+        throw err;
+      }
     }
   }
 
@@ -345,7 +350,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserPerformanceData(userId: string, startDate?: Date, endDate?: Date): Promise<PerformanceData[]> {
-    let query = db.select().from(performanceData).where(eq(performanceData.userId, userId));
+    let query = db.select().from(performanceData);
+    query = query.where(eq(performanceData.userId, userId));
     
     if (startDate && endDate) {
       query = query.where(
@@ -554,8 +560,8 @@ export class DatabaseStorage implements IStorage {
     let query = db
       .select()
       .from(fraudDetection)
-      .innerJoin(affiliateLinks, eq(fraudDetection.linkId, affiliateLinks.id))
-      .where(eq(affiliateLinks.userId, userId));
+      .innerJoin(affiliateLinks, eq(fraudDetection.linkId, affiliateLinks.id));
+    query = query.where(eq(affiliateLinks.userId, userId));
 
     if (startDate && endDate) {
       query = query.where(

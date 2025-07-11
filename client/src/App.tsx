@@ -18,16 +18,7 @@ import Publish from "@/pages/publish";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 
-function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return null;
-  }
-
-  if (!isAuthenticated) {
-    return <Redirect to="/" />;
-  }
+function Router() {  const { isAuthenticated, isLoading } = useAuth();  if (isLoading) {    return (      <div className="flex items-center justify-center h-screen">        Loading...      </div>    );  }  if (!isAuthenticated) {    return <Landing />;  }
 
   return (
     <div className="flex h-screen bg-slate-50">
