@@ -58,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     passport.authenticate('google', { scope: ['profile', 'email'] }));
 
   app.get('/api/auth/google/callback', 
-    passport.authenticate('google', { failureRedirect: '/login' }),
+    passport.authenticate('google', { failureRedirect: '/onboarding' }),
     function(req, res) {
       // Successful authentication, redirect home.
       res.redirect('/dashboard');
