@@ -61,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     passport.authenticate('google', { failureRedirect: '/login' }),
     function(req, res) {
       // Successful authentication, redirect home.
-      res.redirect('/');
+      res.redirect('/dashboard');
     });
 
   // User Profile API
