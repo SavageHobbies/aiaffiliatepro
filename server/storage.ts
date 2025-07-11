@@ -41,41 +41,51 @@ import {
   type InsertGeneratedContent,
   type DeploymentLog,
   type InsertDeploymentLog,
+  // Assuming these types are from @shared/schema and include password, hashedPassword, salt
+  type InsertUser,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sum, count, sql } from "drizzle-orm";
 import crypto from 'crypto';
 
+// Define a type for creating a user via local registration (includes password)
+// Assuming InsertUser from @shared/schema includes email, password, firstName, lastName
+type CreateUserPayload = Omit<InsertUser, 'id' | 'hashedPassword' | 'salt' | 'createdAt' | 'updatedAt'> & {
+  password: string;
+};
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
+  getUserById(id: string): Promise<User | undefined>; // Added for deserializeUser
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(userData: Omit<UpsertUser, 'id'>): Promise<User>;
-  
+  createUser(userData: CreateUserPayload): Promise<User>; // Updated type for local creation
+  upsertUser(userData: UpsertUser): Promise<User>; // This is for OAuth/external user updates
+
   // Affiliate program operations
   getUserPrograms(userId: string): Promise<AffiliateProgram[]>;
   createProgram(userId: string, program: InsertAffiliateProgram): Promise<AffiliateProgram>;
   updateProgram(id: number, userId: string, program: Partial<InsertAffiliateProgram>): Promise<AffiliateProgram>;
   deleteProgram(id: number, userId: string): Promise<void>;
   getProgram(id: number, userId: string): Promise<AffiliateProgram | undefined>;
-  
+
   // Affiliate link operations
   getUserLinks(userId: string): Promise<AffiliateLink[]>;
   createLink(userId: string, link: InsertAffiliateLink): Promise<AffiliateLink>;
   updateLink(id: number, userId: string, link: Partial<InsertAffiliateLink>): Promise<AffiliateLink>;
   deleteLink(id: number, userId: string): Promise<void>;
   getLink(id: number, userId: string): Promise<AffiliateLink | undefined>;
-  
+
   // Affiliate application operations
   getUserApplications(userId: string): Promise<AffiliateApplication[]>;
   createApplication(userId: string, application: InsertAffiliateApplication): Promise<AffiliateApplication>;
   updateApplication(id: number, userId: string, application: Partial<InsertAffiliateApplication>): Promise<AffiliateApplication>;
   deleteApplication(id: number, userId: string): Promise<void>;
   getApplication(id: number, userId: string): Promise<AffiliateApplication | undefined>;
-  
+
   // Performance data operations
   createPerformanceData(data: InsertPerformanceData): Promise<PerformanceData>;
   getUserPerformanceData(userId: string, startDate?: Date, endDate?: Date): Promise<PerformanceData[]>;
-  
+
   // Analytics operations
   getUserStats(userId: string): Promise<{
     totalEarnings: number;
@@ -84,57 +94,57 @@ export interface IStorage {
     activePrograms: number;
     conversionRate: number;
   }>;
-  
+
   // User settings operations
   getUserSettings(userId: string): Promise<UserSettings | undefined>;
   upsertUserSettings(userId: string, settings: InsertUserSettings): Promise<UserSettings>;
-  
+
   // Commission payment operations
   getUserCommissionPayments(userId: string): Promise<CommissionPayment[]>;
   createCommissionPayment(userId: string, payment: InsertCommissionPayment): Promise<CommissionPayment>;
   updateCommissionPayment(id: number, userId: string, payment: Partial<InsertCommissionPayment>): Promise<CommissionPayment>;
   deleteCommissionPayment(id: number, userId: string): Promise<void>;
-  
-  // Link monitoring operations  
+
+  // Link monitoring operations
   getLinkMonitoring(linkId: number): Promise<LinkMonitoring[]>;
   createLinkMonitoring(monitoring: InsertLinkMonitoring): Promise<LinkMonitoring>;
   updateLinkMonitoring(id: number, monitoring: Partial<InsertLinkMonitoring>): Promise<LinkMonitoring>;
   checkLinkHealth(linkId: number): Promise<LinkMonitoring>;
-  
+
   // Fraud detection operations
   createFraudDetection(detection: InsertFraudDetection): Promise<FraudDetection>;
   getFraudDetection(userId: string, startDate?: Date, endDate?: Date): Promise<FraudDetection[]>;
   analyzeFraudRisk(linkId: number, ipAddress: string, userAgent: string): Promise<number>;
-  
+
   // Content performance operations
   getUserContentPerformance(userId: string): Promise<ContentPerformance[]>;
   createContentPerformance(userId: string, content: InsertContentPerformance): Promise<ContentPerformance>;
   updateContentPerformance(id: number, userId: string, content: Partial<InsertContentPerformance>): Promise<ContentPerformance>;
   deleteContentPerformance(id: number, userId: string): Promise<void>;
-  
+
   // Competitor tracking operations
   getUserCompetitorTracking(userId: string): Promise<CompetitorTracking[]>;
   createCompetitorTracking(userId: string, competitor: InsertCompetitorTracking): Promise<CompetitorTracking>;
   updateCompetitorTracking(id: number, userId: string, competitor: Partial<InsertCompetitorTracking>): Promise<CompetitorTracking>;
   deleteCompetitorTracking(id: number, userId: string): Promise<void>;
-  
+
   // Tax compliance operations
   getUserTaxCompliance(userId: string): Promise<TaxCompliance[]>;
   createTaxCompliance(userId: string, tax: InsertTaxCompliance): Promise<TaxCompliance>;
   updateTaxCompliance(id: number, userId: string, tax: Partial<InsertTaxCompliance>): Promise<TaxCompliance>;
   deleteTaxCompliance(id: number, userId: string): Promise<void>;
-  
+
   // Content generation operations
   getUserGeneratedContent(userId: string): Promise<GeneratedContent[]>;
   createGeneratedContent(userId: string, content: InsertGeneratedContent): Promise<GeneratedContent>;
   updateGeneratedContent(id: number, userId: string, content: Partial<InsertGeneratedContent>): Promise<GeneratedContent>;
   deleteGeneratedContent(id: number, userId: string): Promise<void>;
   getGeneratedContent(id: number, userId: string): Promise<GeneratedContent | undefined>;
-  
+
   // SSH deployment operations
   createDeploymentLog(log: InsertDeploymentLog): Promise<DeploymentLog>;
   getDeploymentLogs(contentId: number): Promise<DeploymentLog[]>;
-  
+
   // Advanced analytics operations
   getAdvancedUserStats(userId: string): Promise<{
     totalEarnings: number;
@@ -153,24 +163,14 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  
+  // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.email,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
+  async getUserById(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
@@ -179,7 +179,8 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(userData: Omit<UpsertUser, 'id'>): Promise<User> {
+  // Handles local user registration
+  async createUser(userData: CreateUserPayload): Promise<User> {
     const salt = crypto.randomBytes(16).toString('hex');
     const hashedPassword = crypto.pbkdf2Sync(userData.password, salt, 1000, 64, 'sha512').toString('hex');
     const id = crypto.randomUUID();
@@ -188,13 +189,70 @@ export class DatabaseStorage implements IStorage {
       .insert(users)
       .values({
         id,
-        ...userData,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
         hashedPassword,
         salt,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        // Default values for other fields if not provided in CreateUserPayload
+        profileImageUrl: userData.profileImageUrl || null,
+        website: userData.website || null,
       })
       .returning();
 
     return newUser;
+  }
+
+  // Handles updates for existing users, especially from OAuth (where password/salt aren't provided)
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    // Attempt to find user by ID if provided, or by email if ID is not available (e.g., from OAuth claims)
+    let existingUser: User | undefined;
+    if (userData.id) {
+      existingUser = await this.getUserById(userData.id);
+    } else if (userData.email) {
+      existingUser = await this.getUserByEmail(userData.email);
+    }
+
+    if (existingUser) {
+      // User exists, update their profile data (excluding password/salt for OAuth updates)
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          firstName: userData.firstName ?? existingUser.firstName, // Use ?? to keep existing if undefined
+          lastName: userData.lastName ?? existingUser.lastName,
+          email: userData.email ?? existingUser.email, // Email should generally not change via upsert
+          profileImageUrl: userData.profileImageUrl ?? existingUser.profileImageUrl,
+          website: userData.website ?? existingUser.website,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, existingUser.id))
+        .returning();
+      return updatedUser;
+    } else {
+      // User does not exist, insert a new user (this path is primarily for initial OAuth user creation)
+      // Ensure all required fields for InsertUser are present.
+      // For OAuth, password and salt are NOT provided, so they must be optional in schema or handled.
+      // Assuming 'hashedPassword' and 'salt' are nullable in your schema for OAuth users.
+      const id = userData.id || crypto.randomUUID(); // Generate ID if not provided (e.g., for new OAuth users)
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          id,
+          email: userData.email!, // Email is crucial for new users
+          firstName: userData.firstName || null,
+          lastName: userData.lastName || null,
+          profileImageUrl: userData.profileImageUrl || null,
+          website: userData.website || null,
+          hashedPassword: null, // OAuth users don't have local passwords
+          salt: null, // OAuth users don't have local passwords
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      return newUser;
+    }
   }
 
   // Affiliate program operations
@@ -503,6 +561,7 @@ export class DatabaseStorage implements IStorage {
       query = query.where(
         and(
           eq(affiliateLinks.userId, userId),
+          sql`${fraudDetection.clickTime} > NOW() - INTERVAL '1 hour'`, // Example: last hour
           sql`${fraudDetection.clickTime} >= ${startDate}`,
           sql`${fraudDetection.clickTime} <= ${endDate}`
         )
