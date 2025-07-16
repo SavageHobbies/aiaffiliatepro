@@ -46,12 +46,22 @@ export const affiliatePrograms = pgTable("affiliate_programs", {
   network: varchar("network"), // Amazon Associates, ShareASale, CJ Affiliate, etc.
   category: varchar("category"),
   dashboardUrl: varchar("dashboard_url"),
+  loginUrl: varchar("login_url"), // Login page URL
+  username: varchar("username"), // Login username/email
+  password: text("password"), // Encrypted password
+  apiKey: text("api_key"), // API key if available
+  apiSecret: text("api_secret"), // API secret if available
+  affiliateId: varchar("affiliate_id"), // Your affiliate ID with this network
+  trackingId: varchar("tracking_id"), // Tracking/publisher ID
   commissionStructure: varchar("commission_structure"),
   cookieDuration: varchar("cookie_duration"),
   paymentThreshold: varchar("payment_threshold"),
   paymentMethod: varchar("payment_method"),
   contactEmail: varchar("contact_email"),
   status: varchar("status").notNull().default("pending"), // active, pending, rejected, inactive
+  lastDataSync: timestamp("last_data_sync"), // When we last pulled data
+  syncEnabled: boolean("sync_enabled").default(false), // Auto-sync enabled
+  syncFrequency: varchar("sync_frequency").default("daily"), // daily, weekly, manual
   notes: text("notes"),
   dateJoined: timestamp("date_joined"),
   createdAt: timestamp("created_at").defaultNow(),

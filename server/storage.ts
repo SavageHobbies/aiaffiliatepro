@@ -205,59 +205,30 @@ export class DatabaseStorage implements IStorage {
 
   // Handles updates for existing users, especially from OAuth (where password/salt aren't provided)
   async upsertUser(userData: UpsertUser): Promise<User> {
-    // Attempt to find user first by email, then by ID
-    let existingUser: User | undefined;
-    if (userData.email) {
-      existingUser = await this.getUserByEmail(userData.email);
-    }
-    if (!existingUser && userData.id) {
-      existingUser = await this.getUserById(userData.id);
-    }
-
-    if (existingUser) {
-      // User exists, update their profile data (excluding password/salt for OAuth updates)
-      const [updatedUser] = await db
-        .update(users)
-        .set({
-          firstName: userData.firstName ?? existingUser.firstName, // Use ?? to keep existing if undefined
-          lastName: userData.lastName ?? existingUser.lastName,
-          email: userData.email ?? existingUser.email, // Email should generally not change via upsert
-          profileImageUrl: userData.profileImageUrl ?? existingUser.profileImageUrl,
-          website: userData.website ?? existingUser.website,
+    const [upsertedUser] = await db
+      .insert(users)
+      .values({
+        id: userData.id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        profileImageUrl: userData.profileImageUrl,
+        website: userData.website,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: users.email,
+        set: {
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
           updatedAt: new Date(),
-        })
-        .where(eq(users.id, existingUser.id))
-        .returning();
-      return updatedUser;
-    } else {
-      // User does not exist, insert a new user (this path is primarily for initial OAuth user creation)
-      try {
-        const id = userData.id || crypto.randomUUID();
-        const [newUser] = await db
-          .insert(users)
-          .values({
-            id,
-            email: userData.email!,
-            firstName: userData.firstName || null,
-            lastName: userData.lastName || null,
-            profileImageUrl: userData.profileImageUrl || null,
-            website: userData.website || null,
-            hashedPassword: null,
-            salt: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .returning();
-        return newUser;
-      } catch (err: any) {
-        if (err.code === '23505') {
-          // Duplicate key (email) exists, fetch and return existing user
-          const existing = await this.getUserByEmail(userData.email!);
-          if (existing) return existing;
-        }
-        throw err;
-      }
-    }
+        },
+      })
+      .returning();
+
+    return upsertedUser;
   }
 
   // Affiliate program operations
@@ -292,12 +263,47 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(affiliatePrograms.id, id), eq(affiliatePrograms.userId, userId)));
   }
 
-  async getProgram(id: number, userId: string): Promise<AffiliateProgram | undefined> {
-    const [program] = await db
-      .select()
-      .from(affiliatePrograms)
-      .where(and(eq(affiliatePrograms.id, id), eq(affiliatePrograms.userId, userId)));
-    return program;
+  async getProgram(id: number, userId?: string): Promise<AffiliateProgram | undefined> {
+    if (userId) {
+      const [program] = await db
+        .select()
+        .from(affiliatePrograms)
+        .where(and(eq(affiliatePrograms.id, id), eq(affiliatePrograms.userId, userId)));
+      return program;
+    } else {
+      // For sync service - get program without user restriction
+      const [program] = await db
+        .select()
+        .from(affiliatePrograms)
+        .where(eq(affiliatePrograms.id, id));
+      return program;
+    }
+  }
+
+  // Method needed by sync service
+  async updateProgramPerformance(programId: number, data: { clicks?: number; conversions?: number; earnings?: number }): Promise<void> {
+    // Update the program's aggregate stats
+    if (data.clicks !== undefined || data.conversions !== undefined || data.earnings !== undefined) {
+      // Get all links for this program to update their stats
+      const programLinks = await db
+        .select()
+        .from(affiliateLinks)
+        .where(eq(affiliateLinks.programId, programId));
+
+      // For now, we'll distribute the data across links or create performance data entries
+      // In a real implementation, you'd want more sophisticated logic here
+      
+      // Create a performance data entry for today
+      await this.createPerformanceData({
+        userId: programLinks[0]?.userId || '', // This should come from the program
+        programId: programId,
+        linkId: null, // Program-level data
+        date: new Date(),
+        clicks: data.clicks || 0,
+        conversions: data.conversions || 0,
+        earnings: data.earnings?.toString() || "0.00"
+      });
+    }
   }
 
   // Affiliate link operations

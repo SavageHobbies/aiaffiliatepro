@@ -50,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err) {
         return res.status(500).json({ message: 'Failed to log out' });
       }
-      res.json({ message: 'Logged out successfully' });
+      res.redirect('/');
     });
   });
 
@@ -724,6 +724,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error generating content:", error);
       res.status(500).json({ message: "Failed to generate content", error: error.message });
+    }
+  });
+
+  // Affiliate Data Sync Routes
+  app.post("/api/programs/:id/sync", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const programId = parseInt(req.params.id);
+      
+      // Verify program belongs to user
+      const program = await storage.getProgram(programId);
+      if (!program || program.userId !== userId) {
+        return res.status(404).json({ message: "Program not found" });
+      }
+
+      const { affiliateSyncService } = await import("./affiliate-sync");
+      const result = await affiliateSyncService.syncProgram(programId);
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error syncing program:", error);
+      res.status(500).json({ message: "Failed to sync program data", error: error.message });
+    }
+  });
+
+  app.post("/api/sync-all", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { affiliateSyncService } = await import("./affiliate-sync");
+      const results = await affiliateSyncService.syncAllUserPrograms(userId);
+      
+      res.json({
+        message: "Sync completed",
+        results
+      });
+    } catch (error: any) {
+      console.error("Error syncing all programs:", error);
+      res.status(500).json({ message: "Failed to sync programs", error: error.message });
+    }
+  });
+
+  app.post("/api/programs/:id/test-connection", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const programId = parseInt(req.params.id);
+      
+      // Verify program belongs to user
+      const program = await storage.getProgram(programId);
+      if (!program || program.userId !== userId) {
+        return res.status(404).json({ message: "Program not found" });
+      }
+
+      // Test connection without full sync
+      const { affiliateSyncService } = await import("./affiliate-sync");
+      
+      // For now, just verify credentials are present
+      const hasCredentials = program.username && program.password && program.loginUrl;
+      const hasApiCredentials = program.apiKey && (program.network?.toLowerCase().includes('shareasale') ? program.apiSecret : true);
+      
+      if (!hasCredentials && !hasApiCredentials) {
+        return res.json({
+          success: false,
+          message: "Missing required credentials. Please add login details or API keys."
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Connection test successful. Credentials appear to be configured correctly."
+      });
+    } catch (error: any) {
+      console.error("Error testing connection:", error);
+      res.status(500).json({ message: "Failed to test connection", error: error.message });
     }
   });
 

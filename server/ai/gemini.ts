@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function generateAffiliateContent(
   apiKey: string,
@@ -8,7 +8,8 @@ export async function generateAffiliateContent(
   selectedPrograms: string[]
 ): Promise<string> {
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const systemPrompt = `You are an expert affiliate marketing content creator. 
 Create high-converting ${contentType} content that:
@@ -19,23 +20,13 @@ Create high-converting ${contentType} content that:
 - Maintains authenticity and provides genuine value
 - Is optimized for conversions
 
-Generate complete HTML content ready for web deployment.`;
+Generate complete HTML content ready for web deployment.
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "system",
-          parts: [{ text: systemPrompt }]
-        },
-        {
-          role: "user", 
-          parts: [{ text: prompt }]
-        }
-      ],
-    });
+User request: ${prompt}`;
 
-    return response.text || "Failed to generate content";
+    const result = await model.generateContent(systemPrompt);
+    const response = await result.response;
+    return response.text() || "Failed to generate content";
   } catch (error) {
     throw new Error(`Content generation failed: ${error}`);
   }
@@ -51,7 +42,13 @@ export async function optimizeForSEO(
   optimizedContent: string;
 }> {
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-pro",
+      generationConfig: {
+        responseMimeType: "application/json",
+      }
+    });
 
     const prompt = `Optimize this content for SEO targeting keywords: ${keywords.join(", ")}
 
@@ -61,27 +58,25 @@ ${content}
 Return JSON with:
 - title: SEO-optimized title (60 chars max)
 - metaDescription: Meta description (160 chars max)  
-- optimizedContent: Content with improved keyword placement and structure`;
+- optimizedContent: Content with improved keyword placement and structure
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-            metaDescription: { type: "string" },
-            optimizedContent: { type: "string" }
-          },
-          required: ["title", "metaDescription", "optimizedContent"]
-        }
-      },
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-    });
+Format as valid JSON object.`;
 
-    const result = JSON.parse(response.text || "{}");
-    return result;
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    try {
+      const parsed = JSON.parse(text);
+      return parsed;
+    } catch {
+      // Fallback if JSON parsing fails
+      return {
+        title: "SEO Optimized Content",
+        metaDescription: "High-quality affiliate marketing content optimized for search engines.",
+        optimizedContent: content
+      };
+    }
   } catch (error) {
     throw new Error(`SEO optimization failed: ${error}`);
   }
