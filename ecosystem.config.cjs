@@ -29,7 +29,7 @@ module.exports = {
     production: {
       user: "djhollywood",
       host: "ai-affliate-pro-app",
-      key: "G:/Websites/Server Files/ppk/digitalocean_private_2277_openssh",
+      key: "G:\\Websites\\Server Files\\ppk\\digitalocean_private_2277_openssh",
       ssh_options: "StrictHostKeyChecking=no",
       ref: "origin/main",
       repo: "git@github.com:SavageHobbies/aiaffiliatepro.git",
